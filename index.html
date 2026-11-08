@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ものラジオ</title>
+<title>ニュースラジオ</title>
 <link rel="icon" id="favicon" href="data:,">
 <script>if (/[?&]embed\b/.test(location.search)) document.documentElement.classList.add("embed")</script>
 <style>
@@ -46,7 +46,7 @@ main{max-width:1280px;margin:0 auto;padding:16px}
 #sdate i::before{content:"";width:9px;height:9px;border-right:3px solid var(--ink);border-bottom:3px solid var(--ink);transform:translateY(-2px) rotate(45deg)}
 #sdate:hover:not(:disabled),.epsel.open #sdate{border-color:var(--yellow);background:rgba(255,208,40,.08)}
 .epsel.open #sdate i{transform:rotate(180deg)}
-#sdate:disabled{border-color:transparent;background:none;cursor:default;padding-left:4px;color:var(--muted)}
+#sdate:disabled{cursor:default}
 #sdate:disabled i{display:none}
 #eplist{position:absolute;left:-4px;top:calc(100% + 14px);z-index:30;width:860px;max-height:640px;overflow:auto;padding:12px;
   background:#0e1017;border:2px solid var(--line);border-radius:20px;box-shadow:0 24px 60px rgba(0,0,0,.6);
@@ -121,7 +121,8 @@ main{max-width:1280px;margin:0 auto;padding:16px}
 #panel ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:26px}
 #panel li{font-size:40px;line-height:1.4;padding-left:52px;position:relative;opacity:0;animation:rise .5s ease-out forwards}
 #panel li::before{content:"▸";position:absolute;left:4px;color:var(--yellow)}
-#panel .big{font-size:104px;line-height:1.12;font-weight:900;color:var(--yellow);margin:8px 0 26px;letter-spacing:2px}
+#panel .big{font-size:84px;line-height:1.12;font-weight:900;color:var(--yellow);margin:8px 0 26px;letter-spacing:2px}
+#panel .big .logo{width:88px;height:76px;margin-right:18px}
 #panel .date{font-size:44px;font-weight:700;margin-bottom:44px}
 #panel .sub{font-size:40px;font-weight:700;color:var(--teal);margin:-10px 0 18px;letter-spacing:2px}
 #panel ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:16px}
@@ -512,20 +513,24 @@ let ep = null, speech = [], curPart = -1;
 // ---------- the stage follows the page width ----------
 // a phone held upright: the upright stage (html.v), the date and language under the player, and, scrolled down past
 // the player, the usual 16:9 stage docked at the top (html.dock)
+let STATION = { name: "ニュースラジオ", credits: [] };
 const PHONE = matchMedia("(orientation:portrait) and (max-width:820px)");
+const phoneMode = () => PHONE.matches && STATION.layout !== "landscape";
 let docked = false, uprightH = 0;
 function phoneLayout() {
   const root = document.documentElement;
-  root.classList.toggle("phone", PHONE.matches);
-  if (!PHONE.matches && docked) { docked = false; root.classList.remove("dock"); }
-  root.classList.toggle("v", PHONE.matches && !docked);
+  const phone = phoneMode();
+  root.classList.toggle("phone", phone);
+  root.classList.toggle("landscape", STATION.layout === "landscape");
+  if (!phone && docked) { docked = false; root.classList.remove("dock"); }
+  root.classList.toggle("v", phone && !docked);
   // the episode picker and the language: under the player on a phone (the language at the end of the station's row),
   // in the stage's header otherwise
-  if (PHONE.matches && !root.classList.contains("embed")) { $("mnav").append($("epsel")); document.querySelector(".chan").append($("langsw")); }
+  if (phone && !root.classList.contains("embed")) { $("mnav").append($("epsel")); document.querySelector(".chan").append($("langsw")); }
   else if ($("epsel").parentNode !== document.querySelector(".brand")) document.querySelector(".brand").append($("epsel"), $("langsw"));
 }
 function dockCheck() {
-  if (!PHONE.matches || document.documentElement.classList.contains("embed")) return;
+  if (!phoneMode() || document.documentElement.classList.contains("embed")) return;
   const root = document.documentElement;
   const place = (docked ? $("dockSpace") : $("frame")).getBoundingClientRect();
   if (!docked) uprightH = place.height;
@@ -817,8 +822,9 @@ $("stage").addEventListener("click", e => {
 
 function showCard(link) {
   const card = $("card"), stage = $("stage");
-  stage.classList.toggle("has-card", !!link);
-  if (!link) return;
+  const hasPreview = !!(link && (link.image || link.icon) && link.status !== 404 && link.status !== 410);
+  stage.classList.toggle("has-card", hasPreview);
+  if (!hasPreview) return;
   const host = (() => { try { return new URL(link.url).hostname; } catch { return ""; } })();
   const missing = link.status === 404 || link.status === 410;
   card.href = link.url;
@@ -832,6 +838,7 @@ function showCard(link) {
     const t = tries.shift();
     card.classList.toggle("noimg", !t);
     card.classList.toggle("icon", !!t && t[1]);
+    if (!t) stage.classList.remove("has-card");
     img.src = t ? t[0] : "";
   };
   img.onerror = next;
@@ -840,6 +847,28 @@ function showCard(link) {
 $("card").addEventListener("click", () => audio.pause());
 
 // ---------- the clock: everything follows the audio position ----------
+// Keep complete subtitles, in short phrases that fit the reference's two-line strip.
+const captionChunks = new WeakMap();
+function captionAt(line, time) {
+  let chunks = captionChunks.get(line);
+  if (!chunks) {
+    const chars = Array.from(line.show || "");
+    chunks = [];
+    while (chars.length) {
+      let take = Math.min(38, chars.length);
+      if (chars.length > 38) {
+        for (let i = 37; i >= 19; i--) if (/[。！？、]/.test(chars[i])) { take = i + 1; break; }
+      }
+      chunks.push(chars.splice(0, take).join(""));
+    }
+    captionChunks.set(line, chunks);
+  }
+  const count = chunks.reduce((sum, text) => sum + Array.from(text).length, 0);
+  const progress = Math.max(0, Math.min(1, (time - line.start) / Math.max(.1, line.end - line.start)));
+  let end = 0;
+  for (const chunk of chunks) { end += Array.from(chunk).length; if (progress * count < end) return chunk; }
+  return chunks.at(-1) || "";
+}
 function tick(now) {
   const speakingAt = t => !audio.paused && speech.some(([a, b]) => t >= a && t < b);
   if (CHAR.type === "sprites") spriteFrame(audio.currentTime, now, ep && speakingAt(audio.currentTime), ep?.segments[curPart]?.kind);
@@ -848,7 +877,7 @@ function tick(now) {
     const part = Math.max(0, ep.segments.findIndex(s => t >= s.start && t < s.end));
     showPart(t >= dur - 0.05 ? ep.segments.length - 1 : part);
     const line = ep.lines_timed.find(l => t >= l.start && t < l.end + 0.3);
-    const cap = line ? line.show : "";
+    const cap = line ? captionAt(line, t) : "";
     if ($("cap").firstChild.textContent !== cap) { $("cap").firstChild.textContent = cap; $("now").textContent = cap; }
     if (CHAR.type !== "sprites") setTalking(speakingAt(t));
     $("bar").firstChild.style.width = (t / dur * 100) + "%";
@@ -861,11 +890,18 @@ requestAnimationFrame(tick);
 
 // ---------- controls ----------
 let seeking = false;
-function toggle() { audio.paused ? audio.play() : audio.pause(); }
+let resumeAt = null;
+function toggle() {
+  if (audio.paused) {
+    if (resumeAt !== null) { audio.currentTime = resumeAt; resumeAt = null; }
+    audio.play();
+  } else audio.pause();
+}
 $("cover").querySelector(".play").onclick = toggle; $("pp").onclick = toggle;
 audio.addEventListener("play", () => { $("cover").hidden = true; $("resume").hidden = true; $("frame").classList.add("playing"); $("ppIcon").innerHTML = PAUSE; });
 audio.addEventListener("pause", () => { $("frame").classList.remove("playing"); $("ppIcon").innerHTML = PLAY; });
 audio.addEventListener("ended", () => { $("cover").hidden = false; });
+audio.addEventListener("seeking", () => { resumeAt = null; $("resume").hidden = true; });
 // audio is kept for a while only (the script stays): tell the viewer instead of failing silently
 audio.addEventListener("error", () => { if (ep) $("loading").textContent = tr("expired"); });
 $("seek").addEventListener("input", () => { seeking = true; audio.currentTime = $("seek").value / 1000 * ep.seconds; });
@@ -893,7 +929,7 @@ function savePos(force) {
 audio.addEventListener("timeupdate", () => { if (!audio.paused) savePos(); });
 audio.addEventListener("pause", () => { savePos(true); listEpisodes(); });
 audio.addEventListener("ended", () => { savePos(true); listEpisodes(); });
-$("from0").onclick = () => { audio.currentTime = 0; $("resume").hidden = true; audio.play(); };
+$("from0").onclick = () => { resumeAt = null; audio.currentTime = 0; $("resume").hidden = true; audio.play(); };
 // the lock screen, a headset's buttons, a car: previous / next go by topic
 function stepPart(d) {
   if (!ep) return;
@@ -973,6 +1009,7 @@ showSound();
 
 // ---------- episodes ----------
 async function load(date, lang = LANG, at = 0) {
+  resumeAt = null;
   const entry = EPS.find(e => e.date === date), langs = langsOf(entry);
   const L = langs.length ? (langs.includes(lang) ? lang : langs[0]) : null;
   const name = L ? `${date}-${L}` : date;
@@ -1023,8 +1060,7 @@ async function load(date, lang = LANG, at = 0) {
     $("resume").hidden = !(back > 3 && back < ep.seconds - 3);
     if (!$("resume").hidden) {
       $("resume").querySelector("span").textContent = tr("resumeAt")(mmss(back)); $("from0").textContent = tr("from0");
-      const go = () => { audio.currentTime = back; };
-      if (audio.readyState >= 1) go(); else audio.addEventListener("loadedmetadata", go, { once: true });
+      resumeAt = back;
     }
   }
   if (at > 0) $("resume").hidden = true;
@@ -1084,7 +1120,6 @@ function talkShow() {
 $("talkBox").addEventListener("toggle", talkShow);
 // the station describes itself in station.json (name, what it broadcasts, logo, credits): this page and, later,
 // a channel guide read it
-let STATION = { name: "ものラジオ", credits: [] };
 // a station field in the current language: station.json may give "i18n": {"en": {"name", "tagline", "credits", ...}}
 const st = k => STATION.i18n?.[LANG]?.[k] ?? STATION[k];
 function setLang(l) {
@@ -1242,6 +1277,8 @@ async function loadStation() {
     $("slogo").hidden = false;
     $("favicon").href = STATION.logo;
   }
+  phoneLayout();
+  dockCheck();
 }
 async function init() {
   // the show plays even if the character cannot be drawn
@@ -1254,7 +1291,7 @@ async function init() {
   try { eps = await (await fetch("episodes.json", { cache: "no-store" })).json(); } catch {}
   if (!eps.length) { $("loading").textContent = tr("empty"); $("cover").hidden = true; return; }
   $("sdate").disabled = eps.length < 2;
-  EPS = eps; $("epPrev").hidden = $("epNext").hidden = eps.length < 2;
+  EPS = eps; $("epPrev").hidden = $("epNext").hidden = false;
   // #<date>/<lang> in the address, else the last language chosen here, else the browser's
   const [want, wantLang] = location.hash.slice(1).split("/");
   let saved = null; try { saved = localStorage.getItem("lang"); } catch {}
