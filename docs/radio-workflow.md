@@ -16,7 +16,8 @@ Publicへの変更やPages・Sites・Netlifyでの一般公開を行わず、公
 - 音声の実測時間は5〜10分。通常は4〜6本のニュース。
 - このチャットがニュース収集、台本作成、PC音声の生成、GitHubへの更新を担当する。
 - 音声生成と自動実行中はPCとデスクトップアプリを起動しておく。
-- 日本語音声はMicrosoft Haruka Desktop。別の声へ変更する場合はクレジットも合わせる。
+- 日本語音声はCOEIROINK:リリンちゃん（のーまる、styleId 90）。2026年11月9日に参照URLと同じ声を使う指定があり、導入と規約への同意も承諾済み。Microsoft Harukaなど別の声へ自動で戻さない。
+- 声の高さを変えず、画面には「COEIROINK:リリンちゃん」のクレジットを表示する。音声とソフトの規約は https://coeiroink.com/terms と https://coeiroink.com/character/audio-character/lilin-m 。
 - キャラクター素材は現在のcharacter/を維持する。ヘッドホン・チョーカーなし、リボンは左右各1個、袖のピンク横線なし。
 
 ## 試聴画面の構成
@@ -42,10 +43,12 @@ index.htmlは起動時に表紙を表示し、保存した再生位置は再生�
 
 AGENTS.mdとdocs/formats.mdの形式を維持する。各文はsayとshowを持つ。
 sayには日本語音声で自然に読める読み仮名、showには正しい製品名と表記を使う。
-例：tools/radio/render-voice.ps1 -EpisodePath <台本JSON> -OutputDir <WAV一時フォルダ>
+先にtools/radio/start-voice-engine.ps1を実行し、127.0.0.1:50032のCOEIROINKにリリンちゃん（のーまる）がいることを確認する。
+音声生成はPythonでtools/radio/render-coeiroink.py <台本JSON> <WAV一時フォルダ>を実行する。話速1.0、声の高さ0が基本。元のMicrosoft Haruka用render-voice.ps1は使わない。
 続けてPythonでtools/radio/assemble_episode.py <台本JSON> <WAV一時フォルダ> <サイトフォルダ>を実行する。
 Python側はlameenc==1.9.0が必要。既存の作業環境に導入済みのものがあれば再利用する。
-各文を個別に合成し、そのPCM長から字幕と場面切替を計算する。出力は1回分のMP3と時間情報入りJSON。
+各文を個別に合成し、そのPCM長から字幕と場面切替を計算する。出力は1回分のMP3と時間情報入りJSON。生成が成功するまでは既存の番組とクレジットを上書きしない。
+エンジンは導入済みsoftware/runtime/COEIROINK_WIN_CPU_v.2.13.0/engine/engine.exeを使い、作業ディレクトリはそのengineフォルダとする。ソフト本体・モデルをGitHubや配布ZIPに含めない。
 5〜10分、無音でないこと、ファイル参照と時間軸の整合性を検査する。初回はブラウザーで再生を確認する。
 
 ## GitHubへの反映

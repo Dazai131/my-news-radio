@@ -23,10 +23,10 @@
     "note": "AIで生成したキャラクターです"
   },
   "credits": [
-    "ナレーション：Microsoft Haruka（Windows標準の合成音声）",
+    "声：COEIROINK:リリンちゃん",
     "キャラクター画像：AI生成"
   ],
-  "caster": "音声：Microsoft Haruka",
+  "caster": "声：COEIROINK:リリンちゃん",
   "audio": {
     "dir": "audio",
     "keep_days": 30

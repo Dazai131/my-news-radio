@@ -1,4 +1,4 @@
-"""Assemble SAPI speech, exact subtitle timings and a myradio episode."""
+"""Assemble rendered speech, exact subtitle timings and a myradio episode."""
 import argparse
 import array
 import datetime as dt
