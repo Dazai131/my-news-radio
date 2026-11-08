@@ -462,7 +462,7 @@
       "end": 406.213
     }
   ],
-  "audio": "audio/2026-11-08-ja.mp3?voice=lilin-normal",
+  "audio": "audio/2026-11-08-ja.mp3",
   "made_at": "2026-11-08T17:21:38.230513+00:00",
   "voice": {
     "engine": "COEIROINK",
