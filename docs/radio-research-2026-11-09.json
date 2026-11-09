@@ -1,0 +1,15 @@
+{
+  "episode_date_jst": "2026-11-09",
+  "selection": "4本。11月8日放送とURL・発表の重複なし。今朝公開のUVgamiと、11月6日・5日の未紹介の公式発表を扱う。古い発表は読み上げ内で日付を明示。",
+  "sources": [
+    {"topic":"AI","url":"https://huggingface.co/blog/allenai/toyblocks","publisher":"Ai2 on Hugging Face","published_date":"2026-11-06","checked":"公開されたシミュレーション、実演自動生成、評価指標、一般化の課題。万能な完成ロボットとは表現しない。"},
+    {"topic":"3D","url":"https://github.com/danielboxer/UVgami/releases/tag/v2.4.0","api":"https://api.github.com/repos/danielboxer/UVgami/releases/latest","publisher":"danielboxer/UVgami","published_at_utc":"2026-11-08T19:42:45Z","published_at_jst":"2026-11-09T04:42:45+09:00","checked":"Edit regions、Per-part symmetry、Proxy Auto option、シームとプロキシ改善、高速化、一部のクラッシュ修正。具体的な高速化倍率はなし。"},
+    {"topic":"PC","url":"https://learn.microsoft.com/en-us/windows-insider/release-notes/experimental/preview-build-26340-9882","announcement":"https://blogs.windows.com/windows-insider/2026/11/06/announcing-new-builds-for-6-november-2026/","publisher":"Microsoft","published_date":"2026-11-06","checked":"Experimental試験版。Windows HelloのPIN入力とライブ字幕入力元の改善。一般向け配布とは区別する。"},
+    {"topic":"ゲーム","url":"https://news.xbox.com/en-us/2026/11/05/a-faster-simpler-xbox-experience-is-coming-to-pc-web-and-cloud/","publisher":"Xbox Wire","published_date":"2026-11-05","checked":"PCアプリのInsider先行提供。最大60％・50％は公式テストで環境依存。ゲーム内FPSの数字ではない。Webなどへの展開は段階的。"}
+  ],
+  "not_selected": [
+    "11月8日放送済みのLeRobot、Blender 5.3の公開予定、国内GPU推論、GeForce NOW、Apexの同一発表は繰り返さない。",
+    "Blender Developers Blogと一部の開発フォーラムは本文取得が402で失敗したため、そのページを今回の主出典には使用しない。",
+    "Windowsの拡大鏡に関する二次記事は取得したExperimental公式ノートと一致しないため採用せず、公式に確認できたWindows Helloとライブ字幕を扱う。"
+  ]
+}
